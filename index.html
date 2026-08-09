@@ -818,16 +818,23 @@ function audit(){
     }
   }
 
-  // Instagram splits followers into ~1000-entry files. A full-looking last
-  // part means there's another one you didn't include.
-  const parts = state.parts || [];
-  const last = parts.filter(p => /^followers/i.test(p.name)).sort((x,y) => x.name.localeCompare(y.name)).pop();
-  if(last && last.n >= 1000){
-    warns.push({
-      title: 'There may be another followers file',
-      body: `<b>${esc(last.name)}</b> holds exactly ${nf.format(last.n)} entries, which is where Instagram starts a new file.`,
-      fix:  `Check your export for <b>followers_2.json</b> (and beyond) and add them too, or just drop the whole .zip in.`,
-    });
+  // Multi-part exports are numbered followers_1, followers_2, … A hole in that
+  // sequence means a file genuinely didn't make it in. There is no reliable
+  // per-file entry cap to infer from — a single followers_1.json can hold
+  // thousands — so a gap in the numbering is the only trustworthy signal.
+  const nums = (state.parts || [])
+    .map(p => (/^followers_(\d+)\.json$/i.exec(p.name) || [])[1])
+    .filter(Boolean).map(Number).sort((x, y) => x - y);
+  if(nums.length){
+    const missing = [];
+    for(let i = 1; i < nums[nums.length - 1]; i++) if(!nums.includes(i)) missing.push(i);
+    if(missing.length){
+      warns.push({
+        title: missing.length > 1 ? 'Some followers files are missing' : 'A followers file is missing',
+        body: `You loaded ${nums.map(n => `<b>followers_${n}.json</b>`).join(', ')}, which skips ${missing.map(n => `<b>followers_${n}.json</b>`).join(', ')}.`,
+        fix:  `Those followers are absent from the comparison, so <b>"don't follow you back" is overcounting</b>. Add the missing file${missing.length > 1 ? 's' : ''}, or just drop the whole .zip in.`,
+      });
+    }
   }
   return warns;
 }
