@@ -1,0 +1,4 @@
+data/
+connections*/
+.DS_Store
+.playwright-cli/
