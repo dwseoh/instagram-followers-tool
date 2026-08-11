@@ -1,4 +1,4 @@
-# instagram-followers-tool
+# Instagram Follower Tool
 
 A static HTML web app to read Instagram data export data and stats from an overview. 
 Go through a list of people that you follow but don't follow you back, or the people that follow you but you don't follow back.
